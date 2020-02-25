@@ -16,13 +16,11 @@ import java.util.Objects;
 @Service
 public class NewsApiRestTemplateService {
 
-    private static final String LATESTNEWSURL = "http://newsapi.org/v2";
-
-    private static final String LATESTNEWSURL2 = "https://api.currentsapi.services/v1/latest-news?language=%s&apiKey=%s";
+    private static final String LATESTNEWSURL = "https://api.currentsapi.services/v1";
 
     private final WebClient webClient;
 
-    @Value("${newsapi.secret}")
+    @Value("${currentsapi.secret}")
     private String secret;
 
     public NewsApiRestTemplateService() {
@@ -35,7 +33,7 @@ public class NewsApiRestTemplateService {
     @EventListener(ApplicationStartedEvent.class)
     public void init(){
         System.out.println("initialize app");
-        getLatestNewsFromApi("us");
+        getLatestNewsFromApi("en");
     }
 
     public void getLatestNewsFromApi (String lang){
@@ -43,8 +41,8 @@ public class NewsApiRestTemplateService {
         Mono<ClientResponse> newsResponse = webClient
                 .method(HttpMethod.GET)
                 .uri(uriBuilder -> uriBuilder
-                        .path("/top-headlines")
-                        .queryParam("country", lang)
+                        .path("/latest-news")
+                        .queryParam("language", lang)
                         .queryParam("apiKey", secret)
                         .build())
                 .exchange();
