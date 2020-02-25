@@ -1,0 +1,38 @@
+plugins {
+	id 'org.springframework.boot' version '2.2.4.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'java'
+}
+
+group = 'com.github.kalininaleksandrv'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	developmentOnly
+	runtimeClasspath {
+		extendsFrom developmentOnly
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'javax.xml.bind:jaxb-api:2.3.1'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.projectreactor:reactor-spring:1.0.1.RELEASE'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	testImplementation("org.springframework.boot:spring-boot-starter-test"){
+		exclude group: 'junit', module: 'junit'
+	}
+	testImplementation('org.junit.jupiter:junit-jupiter-api:5.3.1')
+	testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.3.1')
+	testImplementation('org.springframework.security:spring-security-test:5.2.0.RELEASE')
+}
+
+test {
+	useJUnitPlatform()
+}
