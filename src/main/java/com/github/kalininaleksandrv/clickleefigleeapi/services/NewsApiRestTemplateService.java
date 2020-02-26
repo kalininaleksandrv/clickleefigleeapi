@@ -1,7 +1,9 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.News;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
+import net.minidev.json.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,8 +43,8 @@ public class NewsApiRestTemplateService {
     @EventListener(ApplicationStartedEvent.class)
     public void init(){
         System.out.println("initialize app");
-        Mono<ClientResponse> responce = getLatestNewsFromApi("en");
-        Optional<ArrayList<News>> listOfNews = jsonResponceParser(responce);
+        Mono<ClientResponse> responce = getLatestNewsFromApi("qq");
+        jsonResponseParser(responce);
     }
 
     public Mono<ClientResponse> getLatestNewsFromApi (String lang) {
@@ -57,24 +59,26 @@ public class NewsApiRestTemplateService {
                 .exchange();
     }
 
-    private Optional<ArrayList<News>> jsonResponceParser(Mono<ClientResponse> responce) {
+    private void jsonResponseParser(Mono<ClientResponse> responce) {
 
-        NewsJsonWraper fetchedData = Objects.requireNonNull(responce
-                .block(), "data must not be null")
-                .bodyToMono(NewsJsonWraper.class)
-                .block();
+        Mono<ClientResponse> resp = responce.flatMap(response -> {
+            if (!response.statusCode().is2xxSuccessful()) return Mono.error(new Exception(response.statusCode().toString()));
+            return Mono.just(response);
+        });
 
-        if (fetchedData!=null && fetchedData.getStatus().equalsIgnoreCase("ok")){
-            fetchedData.getNews()
-                    .forEach(System.out::println);
-            return Optional.of(fetchedData.getNews());
-        } else if (fetchedData!=null){
-            LOGGER.warn("API returns status: "+ fetchedData.getStatus());
-            return Optional.empty();
-        } else {
-            LOGGER.error("API returns empty response");
-            return Optional.empty();
-        }
+        resp.subscribe(
+                success -> {
+                    try {
+                        success.bodyToMono(NewsJsonWraper.class).subscribe(
+                                i -> i.getNews().forEach(System.out::println)
+                        );
+                    } catch (Exception e) {
+                        LOGGER.error("Parse error "+e);
+                    }
+                },
+                error -> {
+                    LOGGER.error("API returns error response "+error);
+                });
     }
 
 }
