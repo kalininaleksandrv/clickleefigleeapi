@@ -1,6 +1,7 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.model;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class News implements Serializable {
 
@@ -18,12 +19,19 @@ public class News implements Serializable {
     private String published;
 
     @Override
-    public String toString() { // TODO: 26.02.2020 change implementation
+    public String toString() {
         return "News{" +
-                "title='" + title + '\'' +
+                "id='" + id + '\'' +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", url='" + url + '\'' +
+                ", author='" + author + '\'' +
+                ", image='" + image + '\'' +
+                ", language='" + language + '\'' +
+                ", category=" + Arrays.toString(category) +
+                ", published='" + published + '\'' +
                 '}';
     }
-
 
     @Override
     public boolean equals(Object obj) {
