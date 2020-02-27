@@ -1,7 +1,5 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
-import com.github.kalininaleksandrv.clickleefigleeapi.configuration.CustomRabbitMQMessagePostProcessor;
-import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsDAOWraper;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,21 +33,15 @@ public class NewsApiRestTemplateService {
 
     private final WebClient webClient;
 
-    private final RabbitTemplate rabbitTemplate;
-
-    private Queue queue;
-
-    private CustomRabbitMQMessagePostProcessor messagePostProcessor;
+    private final CustomMessageService customMessageService;
 
     @Value("${currentsapi.secret}")
     private String secret;
 
     Set<String> listofnews;
 
-    public NewsApiRestTemplateService(RabbitTemplate rabbitTemplate, Queue queue) {
-        this.rabbitTemplate = rabbitTemplate;
-        this.queue = queue;
-        this.messagePostProcessor = new CustomRabbitMQMessagePostProcessor("10000");
+    public NewsApiRestTemplateService(RabbitTemplate rabbitTemplate, Queue queue, CustomMessageService customMessageService) {
+        this.customMessageService = customMessageService;
         listofnews = new LinkedHashSet<>();
         this.webClient = WebClient.builder()
                 .baseUrl(LATESTNEWSURL)
@@ -101,8 +93,7 @@ public class NewsApiRestTemplateService {
                     .doOnNext(item -> {
                             if (listofnews.add(item.getId())) {
                                 addedElementCounter.getAndIncrement();
-                                NewsDAOWraper message = new NewsDAOWraper(item);
-                                this.rabbitTemplate.convertAndSend(queue.getName(), message, messagePostProcessor);
+                                customMessageService.holdMessage(item);
                             } else {
                                 System.out.println("---------element rejected " + item.getId());
                             }
