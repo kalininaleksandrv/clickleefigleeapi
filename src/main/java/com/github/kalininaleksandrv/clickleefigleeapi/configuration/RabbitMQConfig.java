@@ -11,6 +11,9 @@ public class RabbitMQConfig {
 
     @Bean
     Queue queue() {
-        return new Queue(queueName, false);
+
+        Queue queue = new Queue(queueName, false);
+        queue.isAutoDelete();
+        return queue;
     }
 }

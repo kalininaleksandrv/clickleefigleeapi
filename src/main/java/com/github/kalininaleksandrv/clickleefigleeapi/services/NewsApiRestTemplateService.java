@@ -1,5 +1,6 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
+import com.github.kalininaleksandrv.clickleefigleeapi.configuration.CustomRabbitMQMessagePostProcessor;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsDAOWraper;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
 import org.slf4j.Logger;
@@ -38,6 +39,8 @@ public class NewsApiRestTemplateService {
 
     private Queue queue;
 
+    private CustomRabbitMQMessagePostProcessor messagePostProcessor;
+
     @Value("${currentsapi.secret}")
     private String secret;
 
@@ -46,6 +49,7 @@ public class NewsApiRestTemplateService {
     public NewsApiRestTemplateService(RabbitTemplate rabbitTemplate, Queue queue) {
         this.rabbitTemplate = rabbitTemplate;
         this.queue = queue;
+        this.messagePostProcessor = new CustomRabbitMQMessagePostProcessor("10000");
         listofnews = new LinkedHashSet<>();
         this.webClient = WebClient.builder()
                 .baseUrl(LATESTNEWSURL)
@@ -98,7 +102,7 @@ public class NewsApiRestTemplateService {
                             if (listofnews.add(item.getId())) {
                                 addedElementCounter.getAndIncrement();
                                 NewsDAOWraper message = new NewsDAOWraper(item);
-                                this.rabbitTemplate.convertAndSend(queue.getName(), message);
+                                this.rabbitTemplate.convertAndSend(queue.getName(), message, messagePostProcessor);
                             } else {
                                 System.out.println("---------element rejected " + item.getId());
                             }

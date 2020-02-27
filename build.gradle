@@ -24,6 +24,7 @@ dependencies {
 	implementation 'javax.xml.bind:jaxb-api:2.3.1'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.projectreactor:reactor-spring:1.0.1.RELEASE'
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation("org.springframework.boot:spring-boot-starter-test"){
 		exclude group: 'junit', module: 'junit'
