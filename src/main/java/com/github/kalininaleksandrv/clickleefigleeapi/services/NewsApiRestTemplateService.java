@@ -1,6 +1,5 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.News;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
 import net.minidev.json.JSONUtil;
@@ -15,11 +14,14 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Service
 public class NewsApiRestTemplateService {
@@ -33,7 +35,10 @@ public class NewsApiRestTemplateService {
     @Value("${currentsapi.secret}")
     private String secret;
 
+    Set<String> listofnews;
+
     public NewsApiRestTemplateService() {
+        listofnews = new LinkedHashSet<>();
         this.webClient = WebClient.builder()
                 .baseUrl(LATESTNEWSURL)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -43,8 +48,20 @@ public class NewsApiRestTemplateService {
     @EventListener(ApplicationStartedEvent.class)
     public void init(){
         System.out.println("initialize app");
-        Mono<ClientResponse> responce = getLatestNewsFromApi("qq");
-        jsonResponseParser(responce);
+
+        for (int i = 0; i < 10; i++) {
+            try {
+                Mono<ClientResponse> responce = getLatestNewsFromApi("en");
+                Mono<NewsJsonWraper> newsStream = jsonResponseParser(responce);
+                int numberOfAddedElements = processNewsFeed(newsStream);
+                trimSetOfId(numberOfAddedElements);
+                Thread.sleep(300000L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        listofnews.forEach(System.out::println);
     }
 
     public Mono<ClientResponse> getLatestNewsFromApi (String lang) {
@@ -59,26 +76,55 @@ public class NewsApiRestTemplateService {
                 .exchange();
     }
 
-    private void jsonResponseParser(Mono<ClientResponse> responce) {
+    private Mono<NewsJsonWraper> jsonResponseParser(Mono<ClientResponse> responce) {
 
-        Mono<ClientResponse> resp = responce.flatMap(response -> {
+        return responce.flatMap(response -> {
             if (!response.statusCode().is2xxSuccessful()) return Mono.error(new Exception(response.statusCode().toString()));
-            return Mono.just(response);
+            return responce.flatMap(i->i.bodyToMono(NewsJsonWraper.class));
         });
 
-        resp.subscribe(
-                success -> {
-                    try {
-                        success.bodyToMono(NewsJsonWraper.class).subscribe(
-                                i -> i.getNews().forEach(System.out::println)
-                        );
-                    } catch (Exception e) {
-                        LOGGER.error("Parse error "+e);
-                    }
-                },
-                error -> {
-                    LOGGER.error("API returns error response "+error);
-                });
     }
 
+    private int processNewsFeed(Mono<NewsJsonWraper> itemsOfNewsStream) throws InterruptedException {
+
+        AtomicInteger addedElementCounter = new AtomicInteger();
+
+        Disposable dispItemsOfNews = itemsOfNewsStream.subscribe(
+            success -> {
+                for (News i : success.getNews()) {
+                    if (listofnews.add(i.getId())) {
+                        addedElementCounter.getAndIncrement();
+                        System.out.println("----------element added " + i.getId());
+                    } else {
+                        System.out.println("---------element rejected " + i.getId());
+                    }
+                }
+            },
+            error -> LOGGER.error("----------API returns error response "+error));
+
+        while (!dispItemsOfNews.isDisposed()) {
+            Thread.sleep(1000);
+            System.out.println("Waiting......");
+        }
+        System.out.println("added " + addedElementCounter.get());
+        return addedElementCounter.get();
+    }
+
+    private void trimSetOfId(int numberOfAddedElements) {
+        int size = listofnews.size();
+        if(size>300){
+            String[] targetArray = listofnews.toArray(new String[size]);
+            Set<String> strSet = Arrays.stream(targetArray)
+                    .skip(numberOfAddedElements)
+                    .collect(Collectors.toSet());
+            listofnews.clear();
+            listofnews.addAll(strSet);
+            System.out.println("-----------remove " + numberOfAddedElements + " elements from set");
+            AtomicInteger count= new AtomicInteger();
+            listofnews.forEach(i -> {
+                System.out.println(count +" "+i);
+                count.getAndIncrement();
+            });
+        }
+    }
 }
