@@ -1,8 +1,11 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
+import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsDAOWraper;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
@@ -31,12 +34,18 @@ public class NewsApiRestTemplateService {
 
     private final WebClient webClient;
 
+    private final RabbitTemplate rabbitTemplate;
+
+    private Queue queue;
+
     @Value("${currentsapi.secret}")
     private String secret;
 
     Set<String> listofnews;
 
-    public NewsApiRestTemplateService() {
+    public NewsApiRestTemplateService(RabbitTemplate rabbitTemplate, Queue queue) {
+        this.rabbitTemplate = rabbitTemplate;
+        this.queue = queue;
         listofnews = new LinkedHashSet<>();
         this.webClient = WebClient.builder()
                 .baseUrl(LATESTNEWSURL)
@@ -88,7 +97,8 @@ public class NewsApiRestTemplateService {
                     .doOnNext(item -> {
                             if (listofnews.add(item.getId())) {
                                 addedElementCounter.getAndIncrement();
-                                System.out.println("----------element added " + item.getId());
+                                NewsDAOWraper message = new NewsDAOWraper(item);
+                                this.rabbitTemplate.convertAndSend(queue.getName(), message);
                             } else {
                                 System.out.println("---------element rejected " + item.getId());
                             }
