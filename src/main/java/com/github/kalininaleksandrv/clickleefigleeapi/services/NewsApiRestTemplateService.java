@@ -2,7 +2,6 @@ package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
 import com.github.kalininaleksandrv.clickleefigleeapi.model.News;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
-import net.minidev.json.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
@@ -53,8 +52,7 @@ public class NewsApiRestTemplateService {
             try {
                 Mono<ClientResponse> responce = getLatestNewsFromApi("en");
                 Mono<NewsJsonWraper> newsStream = jsonResponseParser(responce);
-                int numberOfAddedElements = processNewsFeed(newsStream);
-                trimSetOfId(numberOfAddedElements);
+                processNewsFeed(newsStream);
                 Thread.sleep(300000L);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -85,29 +83,32 @@ public class NewsApiRestTemplateService {
 
     }
 
-    private int processNewsFeed(Mono<NewsJsonWraper> itemsOfNewsStream) throws InterruptedException {
+    private void processNewsFeed(Mono<NewsJsonWraper> itemsOfNewsStream) {
 
         AtomicInteger addedElementCounter = new AtomicInteger();
 
-        Disposable dispItemsOfNews = itemsOfNewsStream.subscribe(
-            success -> {
-                for (News i : success.getNews()) {
-                    if (listofnews.add(i.getId())) {
-                        addedElementCounter.getAndIncrement();
-                        System.out.println("----------element added " + i.getId());
-                    } else {
-                        System.out.println("---------element rejected " + i.getId());
-                    }
-                }
-            },
+        itemsOfNewsStream.subscribe(
+            success -> Flux.fromIterable(success.getNews())
+                    .doOnNext(item -> {
+                            if (listofnews.add(item.getId())) {
+                                addedElementCounter.getAndIncrement();
+                                System.out.println("----------element added " + item.getId());
+                            } else {
+                                System.out.println("---------element rejected " + item.getId());
+                            }
+                    })
+                    .doOnError(e -> LOGGER.error("----------Stream of News return error " + e))
+                    .doOnComplete(() -> passCountOfelement(addedElementCounter))
+                    .subscribe(),
             error -> LOGGER.error("----------API returns error response "+error));
 
-        while (!dispItemsOfNews.isDisposed()) {
-            Thread.sleep(1000);
-            System.out.println("Waiting......");
-        }
-        System.out.println("added " + addedElementCounter.get());
-        return addedElementCounter.get();
+    }
+
+    private void passCountOfelement(AtomicInteger numberOfAddedElements) {
+
+        System.out.println("COUNTED " + numberOfAddedElements);
+        trimSetOfId(numberOfAddedElements.get());
+
     }
 
     private void trimSetOfId(int numberOfAddedElements) {
