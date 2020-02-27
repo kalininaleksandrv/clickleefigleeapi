@@ -1,6 +1,5 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
-import com.github.kalininaleksandrv.clickleefigleeapi.model.News;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +9,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -48,18 +48,14 @@ public class NewsApiRestTemplateService {
     public void init(){
         System.out.println("initialize app");
 
-        for (int i = 0; i < 10; i++) {
-            try {
-                Mono<ClientResponse> responce = getLatestNewsFromApi("en");
-                Mono<NewsJsonWraper> newsStream = jsonResponseParser(responce);
-                processNewsFeed(newsStream);
-                Thread.sleep(300000L);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        startSheduligConsumingNewsApi();
+    }
 
-        listofnews.forEach(System.out::println);
+    @Scheduled(initialDelay = 60000, fixedRate=60000)
+    private void startSheduligConsumingNewsApi() {
+        Mono<ClientResponse> responce = getLatestNewsFromApi("en");
+        Mono<NewsJsonWraper> newsStream = jsonResponseParser(responce);
+        processNewsFeed(newsStream);
     }
 
     public Mono<ClientResponse> getLatestNewsFromApi (String lang) {
