@@ -1,5 +1,6 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
+import com.github.kalininaleksandrv.clickleefigleeapi.model.News;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -87,21 +86,32 @@ public class NewsApiRestTemplateService {
     private void processNewsFeed(Mono<NewsJsonWraper> itemsOfNewsStream) {
 
         AtomicInteger addedElementCounter = new AtomicInteger();
+        List<News> newsToSave = new LinkedList<>();
 
         itemsOfNewsStream.subscribe(
             success -> Flux.fromIterable(success.getNews())
                     .doOnNext(item -> {
                             if (listofnews.add(item.getId())) {
                                 addedElementCounter.getAndIncrement();
-                                customMessageService.holdMessage(item);
-                            } else {
-                                System.out.println("---------element rejected " + item.getId());
+                                newsToSave.add(item);
                             }
                     })
-                    .doOnError(e -> LOGGER.error("----------Stream of News return error " + e))
-                    .doOnComplete(() -> passCountOfelement(addedElementCounter))
+                    .doOnError(e -> {
+                        String msg = "Stream of News return error " + e;
+                        LOGGER.error(msg);
+                        customMessageService.holdError(msg);
+                    })
+                    .doOnComplete(() -> {
+                        passCountOfelement(addedElementCounter);
+                        customMessageService.holdAllMessages(newsToSave);
+                        newsToSave.clear();
+                    })
                     .subscribe(),
-            error -> LOGGER.error("----------API returns error response "+error));
+            error -> {
+                String msg = "API returns error response " + error;
+                LOGGER.error(msg);
+                customMessageService.holdError(msg);
+            });
 
     }
 
