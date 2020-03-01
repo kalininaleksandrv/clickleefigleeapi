@@ -85,7 +85,7 @@ public class NewsApiRestTemplateService {
 
     private void processNewsFeed(Mono<NewsJsonWraper> itemsOfNewsStream) {
 
-        AtomicInteger addedElementCounter = new AtomicInteger();
+        AtomicInteger addedElementCounter = new AtomicInteger(0);
         List<News> newsToSave = new LinkedList<>();
 
         itemsOfNewsStream.subscribe(

@@ -9,8 +9,12 @@ public class NewsDAOWraper implements Serializable {
 
     private final News news;
 
-    //0 - green 1 - yellow 2 - red
+    //0 - none 1 - green 2 - yellow 3 - red
     private int clickBaitFactor;
+
+    private String bunchId;
+
+    private long creationTime;
 
     private LinkedList<Long> usersWhoAddNewsToClickBaitStatus;
 
@@ -32,6 +36,14 @@ public class NewsDAOWraper implements Serializable {
         return clickBaitFactor;
     }
 
+    public String getBunchId() {
+        return bunchId;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
     public LinkedList<Long> getUsersWhoAddNewsToClickBaitStatus() {
         return usersWhoAddNewsToClickBaitStatus;
     }
@@ -42,6 +54,14 @@ public class NewsDAOWraper implements Serializable {
 
     public void addUsersWhoAddNewsToClickBaitStatus(Long userId) {
         this.usersWhoAddNewsToClickBaitStatus.addLast(userId);
+    }
+
+    public void setBunchId(String bunchId) {
+        this.bunchId = bunchId;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
     }
 
     //wrappers equal if containing news are equal
