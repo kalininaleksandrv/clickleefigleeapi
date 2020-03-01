@@ -4,21 +4,26 @@ import com.github.kalininaleksandrv.clickleefigleeapi.configuration.CustomRabbit
 import com.github.kalininaleksandrv.clickleefigleeapi.configuration.RabbitMQConfig;
 import com.github.kalininaleksandrv.clickleefigleeapi.interfaces.MessageHolder;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.News;
-import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsDAOWraper;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.validation.constraints.NotNull;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
 @Service
 public class CustomMessageService implements MessageHolder {
+
 
     private final RabbitTemplate rabbitTemplate;
 
     private CustomRabbitMQMessagePostProcessor messagePostProcessor;
 
+    private static final String CREATIONTIME = "creationtime";
+    private static final String NEWSID = "newsid";
+    private static final String COUNTNEWSINBUNCH = "countnewsinbunch";
     private static String ROUTING_KEY_NEWS = "this.news";
     private static String ROUTING_KEY_ERROR = "this.error";
 
@@ -29,10 +34,7 @@ public class CustomMessageService implements MessageHolder {
 
     @Override
     public void holdAllMessages(List<News> news) {
-        List<NewsDAOWraper> newsDaoList = getNewsDAOWrapers(news);
-        if (saveNewsToDb(newsDaoList)) {
-            pushNotificationsToQueue(newsDaoList);
-        }
+            pushNotificationsToQueue(saveNewsToDb(news));
     }
 
     @Override
@@ -40,31 +42,28 @@ public class CustomMessageService implements MessageHolder {
         this.rabbitTemplate.convertAndSend(RabbitMQConfig.TOPIC_EXCHANGE_NAME, ROUTING_KEY_ERROR, error);
     }
 
-    private List<NewsDAOWraper> getNewsDAOWrapers(List<News> news) {
-        String bunchID = UUID.randomUUID().toString();
-        List<NewsDAOWraper> newsDaoList = new LinkedList<>();
-        news.forEach(
-                i -> {
-                    NewsDAOWraper newsDao = new NewsDAOWraper(i);
-                    newsDao.setBunchId(bunchID);
-                    newsDao.setCreationTime(System.currentTimeMillis());
-                    newsDaoList.add(newsDao);
-                }
-        );
-        return newsDaoList;
+    private List<String> saveNewsToDb(List<News> newsDaoList) {
+        List<String> listOfSavedIds = new LinkedList<>();
+        newsDaoList.forEach(i->{
+            System.out.println("save news to db " + i.getId());
+            listOfSavedIds.add(i.getId());
+        });
+        return listOfSavedIds;
     }
 
-    private boolean saveNewsToDb(List<NewsDAOWraper> newsDaoList) {
-        newsDaoList.forEach(i->System.out.println("save news to db " + i.getId()));
-        return true;
-    }
-
-    private void pushNotificationsToQueue(List<NewsDAOWraper> newsDaoList) {
-        newsDaoList.forEach(i -> this.rabbitTemplate
+    private void pushNotificationsToQueue(@NotNull List<String> newsIdList) {
+        String count = String.valueOf(newsIdList.size());
+        newsIdList.forEach(i -> {
+            Map<String, String> nsIdMap = new HashMap<>();
+            nsIdMap.put(CREATIONTIME, String.valueOf(System.currentTimeMillis()));
+            nsIdMap.put(NEWSID, i);
+            nsIdMap.put(COUNTNEWSINBUNCH, count);
+            this.rabbitTemplate
                 .convertAndSend(RabbitMQConfig.TOPIC_EXCHANGE_NAME,
                         ROUTING_KEY_NEWS,
-                        i.getNews().getId(),
-                        messagePostProcessor)
+                        nsIdMap,
+                        messagePostProcessor);
+            }
 
         );
     }
