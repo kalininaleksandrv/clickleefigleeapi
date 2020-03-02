@@ -3,6 +3,7 @@ package com.github.kalininaleksandrv.clickleefigleeapi.services;
 import com.github.kalininaleksandrv.clickleefigleeapi.configuration.CustomRabbitMQMessagePostProcessor;
 import com.github.kalininaleksandrv.clickleefigleeapi.configuration.RabbitMQConfig;
 import com.github.kalininaleksandrv.clickleefigleeapi.interfaces.MessageHolder;
+import com.github.kalininaleksandrv.clickleefigleeapi.interfaces.NewsRepository;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.News;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
@@ -16,9 +17,8 @@ import java.util.Map;
 @Service
 public class CustomMessageService implements MessageHolder {
 
-
+    private final NewsRepository newsRepository;
     private final RabbitTemplate rabbitTemplate;
-
     private CustomRabbitMQMessagePostProcessor messagePostProcessor;
 
     private static final String CREATIONTIME = "creationtime";
@@ -27,7 +27,8 @@ public class CustomMessageService implements MessageHolder {
     private static String ROUTING_KEY_NEWS = "this.news";
     private static String ROUTING_KEY_ERROR = "this.error";
 
-    public CustomMessageService(RabbitTemplate rabbitTemplate) {
+    public CustomMessageService(NewsRepository newsRepository, RabbitTemplate rabbitTemplate) {
+        this.newsRepository = newsRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.messagePostProcessor = new CustomRabbitMQMessagePostProcessor("10000");
     }
@@ -42,12 +43,13 @@ public class CustomMessageService implements MessageHolder {
         this.rabbitTemplate.convertAndSend(RabbitMQConfig.TOPIC_EXCHANGE_NAME, ROUTING_KEY_ERROR, error);
     }
 
-    private List<String> saveNewsToDb(List<News> newsDaoList) {
+    private List<String> saveNewsToDb(List<News> newsList) {
         List<String> listOfSavedIds = new LinkedList<>();
-        newsDaoList.forEach(i->{
+        newsList.forEach(i->{
             System.out.println("save news to db " + i.getId());
             listOfSavedIds.add(i.getId());
         });
+        newsRepository.saveAll(newsList);
         return listOfSavedIds;
     }
 

@@ -25,6 +25,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.projectreactor:reactor-spring:1.0.1.RELEASE'
 	implementation 'org.springframework.boot:spring-boot-starter-amqp'
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation("org.springframework.boot:spring-boot-starter-test"){
 		exclude group: 'junit', module: 'junit'

@@ -1,13 +1,21 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.model;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.IndexDirection;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.MongoId;
+
 import java.io.Serializable;
 import java.util.Arrays;
 
+@Document(collection = "News")
 public class News implements Serializable {
 
     public News() {
     }
 
+    @Id
     private String id;
     private String title;
     private String description;
@@ -16,6 +24,8 @@ public class News implements Serializable {
     private String image;
     private String language;
     private String[] category;
+
+    @Indexed(direction = IndexDirection.ASCENDING)
     private String published;
 
     @Override
