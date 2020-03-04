@@ -64,3 +64,4 @@ target/
 
 ### My extras ###
 application.properties
+/initmongodb.js
