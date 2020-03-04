@@ -4,7 +4,6 @@ import com.github.kalininaleksandrv.clickleefigleeapi.model.News;
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
@@ -39,7 +38,7 @@ public class NewsApiRestTemplateService {
 
     Set<String> listofnews;
 
-    public NewsApiRestTemplateService(RabbitTemplate rabbitTemplate, Queue queue, CustomMessageService customMessageService) {
+    public NewsApiRestTemplateService(RabbitTemplate rabbitTemplate, CustomMessageService customMessageService) {
         this.customMessageService = customMessageService;
         listofnews = new LinkedHashSet<>();
         this.webClient = WebClient.builder()
@@ -55,7 +54,7 @@ public class NewsApiRestTemplateService {
         startSheduligConsumingNewsApi();
     }
 
-    @Scheduled(initialDelay = 60000, fixedRate=60000)
+    @Scheduled(initialDelay = 300000, fixedRate=300000)
     private void startSheduligConsumingNewsApi() {
         Mono<ClientResponse> responce = getLatestNewsFromApi("en");
         Mono<NewsJsonWraper> newsStream = jsonResponseParser(responce);

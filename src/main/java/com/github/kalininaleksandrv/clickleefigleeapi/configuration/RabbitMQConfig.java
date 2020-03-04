@@ -1,9 +1,6 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.configuration;
 
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Declarables;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,26 +14,33 @@ public class RabbitMQConfig {
     public static final String BINDING_PATTERN_ERROR = "#.error";
 
     @Bean
-    Queue queue() {
-        Queue queue = new Queue(NEWS_QUEUE_NAME, false);
-        queue.isAutoDelete();
-        return queue;
+    public Queue newsQueue() {
+        return QueueBuilder.nonDurable(NEWS_QUEUE_NAME)
+                .ttl(84_000_000)
+                .maxLength(1_000)
+                .maxLengthBytes(100_000_000)
+                .build();
+    }
+
+    @Bean
+    public Queue errorQueue() {
+        return QueueBuilder.nonDurable(ERROR_QUEUE_NAME)
+                .maxLength(100)
+                .build();
     }
 
     @Bean
     public Declarables topicBindings() {
-        Queue topicQueueNews = new Queue(NEWS_QUEUE_NAME, false);
-        Queue topicQueueError = new Queue(ERROR_QUEUE_NAME, false);
 
         TopicExchange topicExchange = new TopicExchange(TOPIC_EXCHANGE_NAME, false, false);
 
-        return new Declarables(topicQueueNews, topicQueueError, topicExchange,
+        return new Declarables(newsQueue(), errorQueue(), topicExchange,
                 BindingBuilder
-                .bind(topicQueueNews)
+                .bind(newsQueue())
                 .to(topicExchange)
                 .with(BINDING_PATTERN_NEWS),
                 BindingBuilder
-                .bind(topicQueueError)
+                .bind(errorQueue())
                 .to(topicExchange)
                 .with(BINDING_PATTERN_ERROR));
     }
