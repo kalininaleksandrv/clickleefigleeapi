@@ -1,12 +1,14 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
 import com.github.kalininaleksandrv.clickleefigleeapi.interfaces.InternalQueue;
+import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Service
 public class InternalQueueImplementation implements InternalQueue {
 
     Set<String> listofnews;
