@@ -7,10 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class NewsApiRestTemplateServiceTest {
 
     @Test
-    void init() {
-    }
-
-    @Test
     void getLatestNewsFromApi() {
     }
 }
