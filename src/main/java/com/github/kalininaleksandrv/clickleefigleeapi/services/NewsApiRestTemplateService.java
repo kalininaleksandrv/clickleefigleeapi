@@ -49,8 +49,7 @@ public class NewsApiRestTemplateService {
 
     @EventListener(ApplicationStartedEvent.class)
     public void init(){
-        System.out.println("initialize app");
-
+        LOGGER.info("starting app...");
         startSheduligConsumingNewsApi();
     }
 

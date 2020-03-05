@@ -8,10 +8,10 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class CustomMessageService implements MessageHolder {
@@ -21,8 +21,8 @@ public class CustomMessageService implements MessageHolder {
     private static final String CREATIONTIME = "creationtime";
     private static final String NEWSID = "newsid";
     private static final String COUNTNEWSINBUNCH = "countnewsinbunch";
-    private static String ROUTING_KEY_NEWS = "this.news";
-    private static String ROUTING_KEY_ERROR = "this.error";
+    private static final String ROUTING_KEY_NEWS = "this.news";
+    private static final String ROUTING_KEY_ERROR = "this.error";
 
     public CustomMessageService(NewsRepository newsRepository, RabbitTemplate rabbitTemplate) {
         this.newsRepository = newsRepository;
@@ -31,7 +31,7 @@ public class CustomMessageService implements MessageHolder {
 
     @Override
     public void holdAllMessages(List<News> news) {
-            pushNotificationsToQueue(saveNewsToDb(news));
+        pushNotificationsToQueue(saveNewsToDb(news));
     }
 
     @Override
@@ -40,10 +40,10 @@ public class CustomMessageService implements MessageHolder {
     }
 
     private List<String> saveNewsToDb(List<News> newsList) {
-        List<String> listOfSavedIds = new LinkedList<>();
-        newsList.forEach(i-> listOfSavedIds.add(i.getId()));
-        newsRepository.saveAll(newsList);
-        return listOfSavedIds;
+        return newsRepository.saveAll(newsList)
+                .stream()
+                .map(News::getId)
+                .collect(Collectors.toList());
     }
 
     private void pushNotificationsToQueue(@NotNull List<String> newsIdList) {
@@ -58,7 +58,6 @@ public class CustomMessageService implements MessageHolder {
                         ROUTING_KEY_NEWS,
                         nsIdMap);
             }
-
         );
     }
 
