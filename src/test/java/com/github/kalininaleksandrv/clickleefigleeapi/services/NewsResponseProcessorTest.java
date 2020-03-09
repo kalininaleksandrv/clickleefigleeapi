@@ -53,7 +53,6 @@ class NewsResponseProcessorTest {
                 .verify();
     }
 
-
     @Test
     void parseNewsResponseForbidden() {
 
@@ -69,8 +68,21 @@ class NewsResponseProcessorTest {
                 .verify();
     }
 
-
     @Test
     void processNewsFeed() {
+    }
+
+    @Test
+    void processNewsFeedErrorCase() {
+
+        Mono<ClientResponse> badresponce = Mono.just(ClientResponse
+                .create(HttpStatus.FORBIDDEN)
+                .build());
+
+        Mono<NewsJsonWraper> badnews = newsResponseProcessor.parseNewsResponse(badresponce);
+
+        newsResponseProcessor.processNewsFeed(badnews);
+
+
     }
 }

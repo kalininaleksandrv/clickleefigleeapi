@@ -1,6 +1,8 @@
 package com.github.kalininaleksandrv.clickleefigleeapi.services;
 
 import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
@@ -15,6 +17,8 @@ import reactor.core.publisher.Mono;
 
 @Service
 public class NewsApiRestTemplateService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NewsApiRestTemplateService.class.getName());
 
     private static final String LATESTNEWSURL = "https://api.currentsapi.services/v1";
 
@@ -36,20 +40,25 @@ public class NewsApiRestTemplateService {
     }
 
     @EventListener(ApplicationStartedEvent.class)
-    @Scheduled(initialDelay = 300000, fixedRate=300000)
     public void init() {
-        Mono<ClientResponse> response = getLatestNewsFromApi(lang);
+        getAndProcessResponse(lang);
+        LOGGER.info("NewsApiRestTemplateService starts ...");
+    }
+
+    @Scheduled(initialDelay = 300000, fixedRate=300000)
+    public void getAndProcessResponse(String language){
+        Mono<ClientResponse> response = getLatestNewsFromApi(language);
         Mono<NewsJsonWraper> newsStream = newsResponseProcessor.parseNewsResponse(response);
         newsResponseProcessor.processNewsFeed(newsStream);
     }
 
-    private Mono<ClientResponse> getLatestNewsFromApi(String lang) {
+    private Mono<ClientResponse> getLatestNewsFromApi(String language) {
 
         return webClient
                 .method(HttpMethod.GET)
                 .uri(uriBuilder -> uriBuilder
                         .path("/latest-news")
-                        .queryParam("language", lang)
+                        .queryParam("language", language)
                         .queryParam("apiKey", secret)
                         .build())
                 .exchange();
