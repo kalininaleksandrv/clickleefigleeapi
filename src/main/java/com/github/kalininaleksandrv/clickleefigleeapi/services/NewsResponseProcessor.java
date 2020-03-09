@@ -21,7 +21,8 @@ public class NewsResponseProcessor {
     private final InternalQueueImplementation internalQueueImplementation;
     private final CustomMessageService customMessageService;
 
-    public NewsResponseProcessor(InternalQueueImplementation internalQueueImplementation, CustomMessageService customMessageService) {
+    public NewsResponseProcessor(InternalQueueImplementation internalQueueImplementation,
+                                 CustomMessageService customMessageService) {
         this.internalQueueImplementation = internalQueueImplementation;
         this.customMessageService = customMessageService;
     }
