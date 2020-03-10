@@ -41,13 +41,13 @@ public class NewsApiRestTemplateService {
 
     @EventListener(ApplicationStartedEvent.class)
     public void init() {
-        getAndProcessResponse(lang);
+        getAndProcessResponse();
         LOGGER.info("NewsApiRestTemplateService starts ...");
     }
 
     @Scheduled(initialDelay = 300000, fixedRate=300000)
-    public void getAndProcessResponse(String language){
-        Mono<ClientResponse> response = getLatestNewsFromApi(language);
+    public void getAndProcessResponse(){
+        Mono<ClientResponse> response = getLatestNewsFromApi(lang);
         Mono<NewsJsonWraper> newsStream = newsResponseProcessor.parseNewsResponse(response);
         newsResponseProcessor.processNewsFeed(newsStream);
     }
