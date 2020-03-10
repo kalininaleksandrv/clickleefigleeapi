@@ -5,12 +5,15 @@ import com.github.kalininaleksandrv.clickleefigleeapi.model.NewsJsonWraper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -40,7 +43,7 @@ public class NewsResponseProcessor {
     public void processNewsFeed(Mono<NewsJsonWraper> itemsOfNewsStream) {
 
         AtomicInteger addedElementCounter = new AtomicInteger(0);
-        List<News> newsToSave = new LinkedList<>();
+        List<News> newsToSave = new LinkedList<>(); // TODO: 10.03.2020 ConcurrentLinkedQueue or LinkedBlockingDeque
 
         itemsOfNewsStream.subscribe(
                 success -> Flux.fromIterable(success.getNews())
@@ -59,7 +62,7 @@ public class NewsResponseProcessor {
                             LOGGER.info("passed to MessageHolder: " + addedElementCounter + " news");
                             customMessageService.holdAllMessages(newsToSave);
                             internalQueueImplementation.trimQueue(addedElementCounter.get());
-                            newsToSave.clear();
+//                            newsToSave.clear();
                             addedElementCounter.set(0);
                         })
                         .subscribe(),
