@@ -27,6 +27,7 @@ public class News implements Serializable {
 
     @Indexed(direction = IndexDirection.ASCENDING)
     private String published;
+    private int resultofprocessing;
 
     @Override
     public String toString() {
@@ -137,5 +138,14 @@ public class News implements Serializable {
 
     public void setPublished(String published) {
         this.published = published;
+    }
+
+
+    public int getResultofprocessing() {
+        return resultofprocessing;
+    }
+
+    public void setResultofprocessing(int resultofprocessing) {
+        this.resultofprocessing = resultofprocessing;
     }
 }

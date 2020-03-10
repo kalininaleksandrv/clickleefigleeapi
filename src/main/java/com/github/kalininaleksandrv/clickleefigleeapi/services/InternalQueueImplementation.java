@@ -19,6 +19,7 @@ public class InternalQueueImplementation implements InternalQueue {
 
     @Override
     public boolean compareAndAdd(String newsId) {
+
         return listofnews.add(newsId);
     }
 
