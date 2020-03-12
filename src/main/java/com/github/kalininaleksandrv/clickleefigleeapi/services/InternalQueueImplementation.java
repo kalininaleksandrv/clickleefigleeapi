@@ -35,4 +35,9 @@ public class InternalQueueImplementation implements InternalQueue {
             listofnews.addAll(strSet);
         }
     }
+
+    @Override
+    public int getQueueSize() {
+        return listofnews.size();
+    }
 }
